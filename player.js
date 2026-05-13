@@ -4,6 +4,7 @@
   var controlsReady = false;
   var hideControlsTimer;
   var HIDE_CONTROLS_DELAY = 4000;
+  var pointerHovering = false;
   var current = { id: '', season: '', episode: '' };
 
   function formatTime(seconds) {
@@ -46,16 +47,25 @@
     ].join(''));
   }
 
+  function hideControls() {
+    var player = document.getElementById('player');
+    if (!player) return;
+
+    player.classList.remove('controls-visible');
+  }
+
+  function scheduleHideControls() {
+    clearTimeout(hideControlsTimer);
+    hideControlsTimer = setTimeout(hideControls, HIDE_CONTROLS_DELAY);
+  }
+
   function showControls() {
     var player = document.getElementById('player');
-    var video = document.getElementById('v');
-    if (!player || !video) return;
+    if (!player) return;
 
     player.classList.add('controls-visible');
-    clearTimeout(hideControlsTimer);
-    hideControlsTimer = setTimeout(function() {
-      player.classList.remove('controls-visible');
-    }, HIDE_CONTROLS_DELAY);
+    if (pointerHovering) clearTimeout(hideControlsTimer);
+    else scheduleHideControls();
   }
 
   function updatePlayIcons() {
@@ -80,6 +90,7 @@
 
     ensureOverlay(player);
     player.classList.add('controls-visible');
+    scheduleHideControls();
 
     var nextEpisode = document.getElementById('next-episode');
     if (current.season) nextEpisode.classList.add('show');
@@ -153,9 +164,27 @@
       else player.requestFullscreen().catch(function(){});
     });
 
-    player.addEventListener('click', showControls);
-    player.addEventListener('mousemove', showControls);
-    player.addEventListener('touchstart', showControls, { passive: true });
+    player.addEventListener('click', function() {
+      showControls();
+      scheduleHideControls();
+    });
+    player.addEventListener('mouseenter', function() {
+      pointerHovering = true;
+      showControls();
+    });
+    player.addEventListener('mousemove', function() {
+      pointerHovering = true;
+      showControls();
+    });
+    player.addEventListener('mouseleave', function() {
+      pointerHovering = false;
+      scheduleHideControls();
+    });
+    player.addEventListener('touchstart', function() {
+      pointerHovering = false;
+      showControls();
+      scheduleHideControls();
+    }, { passive: true });
     player.addEventListener('keydown', function(ev) {
       if (ev.key === ' ' || ev.key === 'k') { ev.preventDefault(); togglePlay(); }
       if (ev.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 10);
