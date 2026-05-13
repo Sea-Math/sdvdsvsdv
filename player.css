@@ -1,5 +1,5 @@
 #player { position: fixed; inset: 0; display: none; background: #000; cursor: none; }
-#player.controls-visible, #player:focus-within { cursor: default; }
+#player.controls-visible { cursor: default; }
 #player video { width: 100%; height: 100%; display: block; }
 
 #overlay {
@@ -8,7 +8,7 @@
   background: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.78) 100%);
   opacity: 0; pointer-events: none; transition: opacity .22s ease;
 }
-#player.controls-visible #overlay, #player:focus-within #overlay { opacity: 1; pointer-events: auto; }
+#player.controls-visible #overlay { opacity: 1; pointer-events: auto; }
 #center-play {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   width: 82px; height: 82px; border-radius: 50%; border: 1px solid rgba(255,255,255,.38);

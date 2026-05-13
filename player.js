@@ -3,6 +3,7 @@
 
   var controlsReady = false;
   var hideControlsTimer;
+  var HIDE_CONTROLS_DELAY = 4000;
   var current = { id: '', season: '', episode: '' };
 
   function formatTime(seconds) {
@@ -53,8 +54,8 @@
     player.classList.add('controls-visible');
     clearTimeout(hideControlsTimer);
     hideControlsTimer = setTimeout(function() {
-      if (!video.paused) player.classList.remove('controls-visible');
-    }, 2600);
+      player.classList.remove('controls-visible');
+    }, HIDE_CONTROLS_DELAY);
   }
 
   function updatePlayIcons() {
@@ -106,7 +107,10 @@
 
     playToggle.addEventListener('click', togglePlay);
     centerPlay.addEventListener('click', togglePlay);
-    video.addEventListener('click', togglePlay);
+    video.addEventListener('click', function() {
+      showControls();
+      togglePlay();
+    });
     document.getElementById('back').addEventListener('click', function() {
       video.currentTime = Math.max(0, video.currentTime - 10);
     });
@@ -149,6 +153,7 @@
       else player.requestFullscreen().catch(function(){});
     });
 
+    player.addEventListener('click', showControls);
     player.addEventListener('mousemove', showControls);
     player.addEventListener('touchstart', showControls, { passive: true });
     player.addEventListener('keydown', function(ev) {
