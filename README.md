@@ -9,7 +9,7 @@ A simple movie streaming frontend that pulls video sources using scripts origina
 * 🎥 Stream movies directly in-browser
 * ⚡ Fast loading using HLS streams
 * 🚫 No ads (cleaned version of original scripts)
-* 🌐 Deployed easily with Vercel
+* 🌐 Deployed easily with Netlify or Vercel
 * 🔗 Simple URL-based playback system
 
 ## 🧠 How It Works
@@ -19,7 +19,7 @@ This project uses a scraping/proxy approach to retrieve video streams and displa
 Example:
 
 ```
-https://your-site.vercel.app/?id=550
+https://your-site.netlify.app/?id=550
 ```
 
 * `id` = Movie ID (typically from TMDB or similar source)
@@ -30,21 +30,29 @@ https://your-site.vercel.app/?id=550
 
 ```
 /
-├── index.html        # Main frontend
-├── script.js         # Handles fetching + playback
-├── style.css         # Basic styling
-└── /api              # Serverless functions (proxy/scraper logic)
+├── index.html              # Main frontend and API scrape bootstrap
+├── player.css              # Custom player overlay styles
+├── player.js               # Custom player overlay controls
+├── netlify.toml            # Netlify build, function assets, and API rewrites
+├── /netlify/functions/api.js # Netlify serverless API + HLS proxy
+├── /netlify/functions/script.js # Netlify API runtime helper
+└── /api                    # Vercel serverless API and assets
 ```
+
+## 🛠️ Deployment (Netlify)
+
+1. Clone or fork this repo
+2. Go to https://app.netlify.com
+3. Click **"Add new site"** → **"Import an existing project"**
+4. Import your repo
+5. Keep the publish directory as the repo root (`.`) and leave the build command empty
+6. Deploy
+
+The included `netlify.toml` routes `/api` requests to the Netlify Function at `/.netlify/functions/api`, so the frontend can keep using the same `/api?id=...` and `/api?url=...` paths. All Netlify API runtime files live inside `netlify/functions/`.
 
 ## 🛠️ Deployment (Vercel)
 
-1. Clone or fork this repo
-2. Go to https://vercel.com
-3. Click **"Add New Project"**
-4. Import your repo
-5. Deploy (no config needed)
-
-Once deployed, your site will be live instantly.
+The existing `vercel.json` still supports Vercel deployments by rewriting `/api` to `api/index.js`.
 
 ## ⚠️ Important Notes
 
@@ -57,14 +65,14 @@ Once deployed, your site will be live instantly.
 Just open:
 
 ```
-https://your-vercel-url.vercel.app/?id=MOVIE_ID
+https://your-netlify-url.netlify.app/?id=MOVIE_ID
 ```
 
 That’s it. No accounts, no UI clutter — just press play.
 
 ## 💡 Future Improvements
 
-* Custom video player UI
+* Playback quality selector
 * Subtitles support
 * TV / remote-friendly controls
 * Better error handling

@@ -1,0 +1,45 @@
+#player { position: fixed; inset: 0; display: none; background: #000; cursor: none; }
+#player.controls-visible, #player:focus-within { cursor: default; }
+#player video { width: 100%; height: 100%; display: block; }
+
+#overlay {
+  position: absolute; inset: 0; z-index: 2; display: flex; flex-direction: column;
+  justify-content: flex-end; padding: 0 22px 18px;
+  background: linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,0) 32%, rgba(0,0,0,.78) 100%);
+  opacity: 0; pointer-events: none; transition: opacity .22s ease;
+}
+#player.controls-visible #overlay, #player:focus-within #overlay { opacity: 1; pointer-events: auto; }
+#center-play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 82px; height: 82px; border-radius: 50%; border: 1px solid rgba(255,255,255,.38);
+  background: rgba(0,0,0,.32); color: #fff; display: grid; place-items: center;
+  backdrop-filter: blur(10px); box-shadow: 0 14px 45px rgba(0,0,0,.35);
+}
+#center-play svg { width: 42px; height: 42px; }
+#controls { display: flex; align-items: center; gap: 14px; width: 100%; }
+.control-btn {
+  appearance: none; border: 0; background: transparent; color: #fff; cursor: pointer;
+  width: 42px; height: 42px; display: grid; place-items: center; border-radius: 999px;
+  transition: background .18s ease, transform .18s ease;
+}
+.control-btn:hover, .control-btn:focus-visible { background: rgba(255,255,255,.16); outline: none; transform: scale(1.04); }
+.control-btn svg { width: 31px; height: 31px; stroke-width: 2.5; filter: drop-shadow(0 2px 3px rgba(0,0,0,.55)); }
+#time { min-width: 54px; font-weight: 700; font-size: 1rem; text-shadow: 0 2px 4px rgba(0,0,0,.75); }
+#volume-wrap { display: flex; align-items: center; gap: 4px; }
+#volume { width: 86px; accent-color: #fff; cursor: pointer; }
+#next-episode { display: none; width: auto; padding: 0 12px; gap: 8px; font-weight: 700; }
+#next-episode.show { display: flex; }
+#next-episode span { white-space: nowrap; }
+#spacer { flex: 1; }
+#progress {
+  width: 100%; height: 6px; margin-bottom: 18px; accent-color: #fff; cursor: pointer;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.65));
+}
+@media (max-width: 720px) {
+  #overlay { padding: 0 12px 12px; }
+  #controls { gap: 6px; }
+  .control-btn { width: 36px; height: 36px; }
+  .control-btn svg { width: 26px; height: 26px; }
+  #volume { width: 58px; }
+  #next-episode span { display: none; }
+}

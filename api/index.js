@@ -27,7 +27,7 @@ function bootWasm() {
     eval(fs.readFileSync(path.join(__dirname, 'script.js'), 'utf8'));
 
     const go = new Dm();
-    const wasmBuf = fs.readFileSync(path.join(__dirname, 'fu.wasm'));
+    const wasmBuf = fs.readFileSync(path.join(__dirname, 'stream-token.wasm'));
     const { instance } = await WebAssembly.instantiate(wasmBuf, go.importObject);
     go.run(instance);
 
