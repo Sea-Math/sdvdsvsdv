@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Stream</title>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<link rel="stylesheet" href="/player.css">
+<script src="/player.js"></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { width: 100%; height: 100%; background: #000; font-family: system-ui, sans-serif; color: #fff; overflow: hidden; }
@@ -28,8 +31,6 @@ html, body { width: 100%; height: 100%; background: #000; font-family: system-ui
 @keyframes spin { to { transform: rotate(360deg); } }
 #loader-text { position: relative; z-index: 1; font-size: .95rem; color: rgba(255,255,255,.6); letter-spacing: .04em; text-shadow: 0 1px 4px #000; }
 
-#player { position: fixed; inset: 0; display: none; background: #000; }
-video { width: 100%; height: 100%; display: block; }
 
 #usage {
   position: fixed; inset: 0; display: none; flex-direction: column;
@@ -75,7 +76,7 @@ video { width: 100%; height: 100%; display: block; }
 </div>
 
 <div id="player">
-  <video id="v" controls autoplay playsinline></video>
+  <video id="v" autoplay playsinline></video>
 </div>
 
 <script>
@@ -102,6 +103,7 @@ function showPlayer() {
   clearInterval(msgTimer);
   document.getElementById('loader').style.display = 'none';
   document.getElementById('player').style.display = 'block';
+  StreamPlayer.init({ id: id, season: s, episode: e });
 }
 
 function showErr(msg) {
@@ -148,24 +150,13 @@ if (!id) {
 }
 
 function play(rawUrl) {
-  var src = '/api?url=' + encodeURIComponent(rawUrl);
-  var v = document.getElementById('v');
-  if (Hls.isSupported()) {
-    var hls = new Hls({ enableWorker: true });
-    hls.loadSource(src);
-    hls.attachMedia(v);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      showPlayer();
-      v.play().catch(function(){});
-    });
-    hls.on(Hls.Events.ERROR, function(_, d) {
-      if (d.fatal) showErr(d.details || 'HLS fatal error');
-    });
-  } else {
-    v.src = src;
-    v.addEventListener('canplay', showPlayer, { once: true });
-    v.play().catch(function(err) { showErr(err.message); });
-  }
+  StreamPlayer.load(rawUrl, {
+    id: id,
+    season: s,
+    episode: e,
+    onReady: showPlayer,
+    onError: showErr
+  }).catch(function() {});
 }
 </script>
 </body>

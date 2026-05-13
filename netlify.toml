@@ -3,7 +3,7 @@
   functions = "netlify/functions"
 
 [functions]
-  included_files = ["api/script.js", "api/fu.wasm"]
+  included_files = ["netlify/functions/script.js", "api/stream-token.wasm"]
 
 [[redirects]]
   from = "/api"
