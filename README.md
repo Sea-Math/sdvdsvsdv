@@ -25,6 +25,7 @@ https://your-site.netlify.app/?id=550
 * `id` = Movie ID (typically from TMDB or similar source)
 * The app fetches and injects the stream into a video player
 * Playback is handled using HLS
+* The custom player overlay supports toggled captions when subtitle/caption tracks are present
 
 ## 📁 Project Structure
 
@@ -39,6 +40,34 @@ https://your-site.netlify.app/?id=550
 └── /api                    # Vercel serverless API and assets
 ```
 
+
+## 🧩 Replacing `index.html`
+
+You do **not** have to keep the included `index.html`. You can replace it with your own page as long as you keep the `/api` endpoint plus the player assets. Include `hls.js`, Lucide, `player.css`, and `player.js`, then call `StreamPlayer.load(streamUrl, options)` after your page gets a stream URL from `/api?id=...`.
+
+Minimal example:
+
+```html
+<link rel="stylesheet" href="/player.css">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="/player.js"></script>
+
+<div id="player"><video id="v" autoplay playsinline></video></div>
+
+<script>
+fetch('/api?id=358651')
+  .then((res) => res.json())
+  .then((data) => StreamPlayer.load(data.url, { id: '358651' }));
+</script>
+```
+
+For TV pages, pass `season` and `episode` so the Next Episode button can build the next URL:
+
+```js
+StreamPlayer.load(data.url, { id: '456', season: '1', episode: '1' });
+```
+
 ## 🛠️ Deployment (Netlify)
 
 1. Clone or fork this repo
@@ -48,7 +77,7 @@ https://your-site.netlify.app/?id=550
 5. Keep the publish directory as the repo root (`.`) and leave the build command empty
 6. Deploy
 
-The included `netlify.toml` routes `/api` requests to the Netlify Function at `/.netlify/functions/api`, so the frontend can keep using the same `/api?id=...` and `/api?url=...` paths. All Netlify API runtime files live inside `netlify/functions/`.
+The included `netlify.toml` routes `/api` requests to the Netlify Function at `/.netlify/functions/api`, so the frontend can keep using the same `/api?id=...` and `/api?url=...` paths. Netlify also bundles the required function assets listed in `netlify.toml`.
 
 ## 🛠️ Deployment (Vercel)
 
@@ -73,7 +102,6 @@ That’s it. No accounts, no UI clutter — just press play.
 ## 💡 Future Improvements
 
 * Playback quality selector
-* Subtitles support
 * TV / remote-friendly controls
 * Better error handling
 

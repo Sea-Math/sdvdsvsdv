@@ -6,6 +6,8 @@
   var HIDE_CONTROLS_DELAY = 4000;
   var pointerHovering = false;
   var current = { id: '', season: '', episode: '' };
+  var captionsEnabled = false;
+  var activeHls = null;
 
   function formatTime(seconds) {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
@@ -41,6 +43,7 @@
       '    <span id="time">0:00</span>',
       '    <div id="spacer"></div>',
       '    <button id="next-episode" class="control-btn" type="button" aria-label="Next episode"><i data-lucide="skip-forward"></i><span>Next Episode</span></button>',
+      '    <button id="captions" class="control-btn" type="button" aria-label="Toggle captions" aria-pressed="false"><i data-lucide="captions"></i></button>',
       '    <button id="fullscreen" class="control-btn" type="button" aria-label="Fullscreen"><i data-lucide="maximize"></i></button>',
       '  </div>',
       '</div>',
@@ -66,6 +69,48 @@
     player.classList.add('controls-visible');
     if (pointerHovering) clearTimeout(hideControlsTimer);
     else scheduleHideControls();
+  }
+
+
+  function getCaptionTracks() {
+    var video = document.getElementById('v');
+    if (!video || !video.textTracks) return [];
+
+    return Array.prototype.slice.call(video.textTracks).filter(function(track) {
+      return track.kind === 'subtitles' || track.kind === 'captions';
+    });
+  }
+
+  function hasHlsCaptions() {
+    return !!(activeHls && activeHls.subtitleTracks && activeHls.subtitleTracks.length);
+  }
+
+  function updateCaptionsButton() {
+    var captions = document.getElementById('captions');
+    if (!captions) return;
+
+    var tracks = getCaptionTracks();
+    var hasCaptions = tracks.length > 0 || hasHlsCaptions();
+    captions.disabled = !hasCaptions;
+    captions.classList.toggle('active', captionsEnabled && hasCaptions);
+    captions.setAttribute('aria-pressed', captionsEnabled && hasCaptions ? 'true' : 'false');
+    captions.setAttribute('title', hasCaptions ? 'Toggle captions' : 'No captions available');
+  }
+
+  function setCaptions(enabled) {
+    var tracks = getCaptionTracks();
+    var hasCaptions = tracks.length > 0 || hasHlsCaptions();
+    captionsEnabled = enabled && hasCaptions;
+
+    if (activeHls && activeHls.subtitleTracks) activeHls.subtitleTrack = captionsEnabled ? 0 : -1;
+    tracks.forEach(function(track, index) {
+      track.mode = captionsEnabled && index === 0 ? 'showing' : 'disabled';
+    });
+    updateCaptionsButton();
+  }
+
+  function toggleCaptions() {
+    setCaptions(!captionsEnabled);
   }
 
   function updatePlayIcons() {
@@ -109,6 +154,7 @@
     var time = document.getElementById('time');
     var mute = document.getElementById('mute');
     var volume = document.getElementById('volume');
+    var captions = document.getElementById('captions');
     var fullscreen = document.getElementById('fullscreen');
 
     function togglePlay() {
@@ -137,7 +183,13 @@
     });
     video.addEventListener('loadedmetadata', function() {
       time.textContent = formatTime(video.currentTime);
+      setCaptions(captionsEnabled);
+      updateCaptionsButton();
     });
+    if (video.textTracks && video.textTracks.addEventListener) {
+      video.textTracks.addEventListener('addtrack', updateCaptionsButton);
+      video.textTracks.addEventListener('change', updateCaptionsButton);
+    }
 
     progress.addEventListener('input', function() {
       if (video.duration) video.currentTime = (Number(progress.value) / 100) * video.duration;
@@ -158,6 +210,8 @@
       var next = Number(current.episode || '1') + 1;
       location.href = location.pathname + '?id=' + encodeURIComponent(current.id) + '&s=' + encodeURIComponent(current.season) + '&e=' + next;
     });
+
+    captions.addEventListener('click', toggleCaptions);
 
     fullscreen.addEventListener('click', function() {
       if (document.fullscreenElement) document.exitFullscreen();
@@ -193,11 +247,67 @@
     player.tabIndex = 0;
     refreshIcons();
     updatePlayIcons();
+    updateCaptionsButton();
     showControls();
+  }
+
+  function proxyStreamUrl(rawUrl, options) {
+    if (options && options.proxy === false) return rawUrl;
+    return (options && options.proxyPrefix ? options.proxyPrefix : '/api?url=') + encodeURIComponent(rawUrl);
+  }
+
+  function load(rawUrl, options) {
+    options = options || {};
+    current = options;
+
+    var video = document.getElementById('v');
+    if (!video) return Promise.reject(new Error('Video element #v not found'));
+
+    var src = proxyStreamUrl(rawUrl, options);
+    if (activeHls && activeHls.destroy) activeHls.destroy();
+    activeHls = null;
+
+    return new Promise(function(resolve, reject) {
+      function ready() {
+        init(options);
+        if (typeof options.onReady === 'function') options.onReady(video);
+        video.play().catch(function(){});
+        resolve(video);
+      }
+
+      function fail(error) {
+        if (typeof options.onError === 'function') options.onError(error.message || error);
+        reject(error);
+      }
+
+      if (window.Hls && Hls.isSupported()) {
+        activeHls = new Hls({ enableWorker: true });
+        activeHls.loadSource(src);
+        activeHls.attachMedia(video);
+        activeHls.on(Hls.Events.MANIFEST_PARSED, ready);
+        if (Hls.Events.SUBTITLE_TRACKS_UPDATED) {
+          activeHls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function() {
+            setCaptions(captionsEnabled);
+            updateCaptionsButton();
+          });
+        }
+        activeHls.on(Hls.Events.ERROR, function(_, data) {
+          if (data.fatal) fail(new Error(data.details || 'HLS fatal error'));
+        });
+      } else {
+        video.src = src;
+        video.addEventListener('canplay', ready, { once: true });
+        video.addEventListener('error', function() {
+          fail(new Error('Video playback error'));
+        }, { once: true });
+      }
+    });
   }
 
   window.StreamPlayer = {
     init: init,
+    load: load,
+    setCaptions: setCaptions,
     showControls: showControls,
   };
 })();

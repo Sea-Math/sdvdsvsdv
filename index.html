@@ -150,24 +150,13 @@ if (!id) {
 }
 
 function play(rawUrl) {
-  var src = '/api?url=' + encodeURIComponent(rawUrl);
-  var v = document.getElementById('v');
-  if (Hls.isSupported()) {
-    var hls = new Hls({ enableWorker: true });
-    hls.loadSource(src);
-    hls.attachMedia(v);
-    hls.on(Hls.Events.MANIFEST_PARSED, function() {
-      showPlayer();
-      v.play().catch(function(){});
-    });
-    hls.on(Hls.Events.ERROR, function(_, d) {
-      if (d.fatal) showErr(d.details || 'HLS fatal error');
-    });
-  } else {
-    v.src = src;
-    v.addEventListener('canplay', showPlayer, { once: true });
-    v.play().catch(function(err) { showErr(err.message); });
-  }
+  StreamPlayer.load(rawUrl, {
+    id: id,
+    season: s,
+    episode: e,
+    onReady: showPlayer,
+    onError: showErr
+  }).catch(function() {});
 }
 </script>
 </body>
