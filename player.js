@@ -4,7 +4,6 @@
   var controlsReady = false;
   var hideControlsTimer;
   var HIDE_CONTROLS_DELAY = 4000;
-  var pointerHovering = false;
   var current = { id: '', season: '', episode: '' };
   var captionsEnabled = false;
   var activeHls = null;
@@ -62,13 +61,17 @@
     hideControlsTimer = setTimeout(hideControls, HIDE_CONTROLS_DELAY);
   }
 
+  function controlsVisible() {
+    var player = document.getElementById('player');
+    return !!(player && player.classList.contains('controls-visible'));
+  }
+
   function showControls() {
     var player = document.getElementById('player');
     if (!player) return;
 
     player.classList.add('controls-visible');
-    if (pointerHovering) clearTimeout(hideControlsTimer);
-    else scheduleHideControls();
+    scheduleHideControls();
   }
 
 
@@ -165,6 +168,11 @@
     playToggle.addEventListener('click', togglePlay);
     centerPlay.addEventListener('click', togglePlay);
     video.addEventListener('click', function() {
+      if (!controlsVisible()) {
+        showControls();
+        return;
+      }
+
       showControls();
       togglePlay();
     });
@@ -222,23 +230,10 @@
       showControls();
       scheduleHideControls();
     });
-    player.addEventListener('mouseenter', function() {
-      pointerHovering = true;
-      showControls();
-    });
-    player.addEventListener('mousemove', function() {
-      pointerHovering = true;
-      showControls();
-    });
-    player.addEventListener('mouseleave', function() {
-      pointerHovering = false;
-      scheduleHideControls();
-    });
-    player.addEventListener('touchstart', function() {
-      pointerHovering = false;
-      showControls();
-      scheduleHideControls();
-    }, { passive: true });
+    player.addEventListener('mouseenter', showControls);
+    player.addEventListener('mousemove', showControls);
+    player.addEventListener('mouseleave', hideControls);
+    player.addEventListener('touchstart', showControls, { passive: true });
     player.addEventListener('keydown', function(ev) {
       if (ev.key === ' ' || ev.key === 'k') { ev.preventDefault(); togglePlay(); }
       if (ev.key === 'ArrowLeft') video.currentTime = Math.max(0, video.currentTime - 10);
